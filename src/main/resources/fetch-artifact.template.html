@@ -1,0 +1,27 @@
+<!--
+  ~ Copyright 2018 ThoughtWorks, Inc.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<div class="form_item_block">
+    <label ng-class="{'is-invalid-label': GOINPUTNAME[source].$error.server}">Source:<span class='asterix'>*</span></label>
+    <input ng-class="{'is-invalid-input': GOINPUTNAME[source].$error.server}" type="text" ng-model="source" ng-required="true" placeholder="value"/>
+    <span class="form_error form-error" ng-class="{'is-visible': GOINPUTNAME[source].$error.server}" ng-show="GOINPUTNAME[source].$error.server">{{GOINPUTNAME[source].$error.server}}</span>
+</div>
+
+<div class="form_item_block">
+    <label ng-class="{'is-invalid-label': GOINPUTNAME[destination].$error.server}">Destination:<span class='asterix'>*</span></label>
+    <input ng-class="{'is-invalid-input': GOINPUTNAME[destination].$error.server}" type="text" ng-model="destination" ng-required="true" placeholder="value"/>
+    <span class="form_error form-error" ng-class="{'is-visible': GOINPUTNAME[destination].$error.server}" ng-show="GOINPUTNAME[destination].$error.server">{{GOINPUTNAME[destination].$error.server}}</span>
+</div>
