@@ -19,6 +19,7 @@ package cd.go.artifact.dummy.model;
 import cd.go.artifact.dummy.config.Field;
 import cd.go.artifact.dummy.config.Metadata;
 import com.google.gson.annotations.SerializedName;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 
@@ -26,13 +27,13 @@ import static cd.go.artifact.dummy.DummyArtifactPlugin.GSON;
 
 public class ArtifactConfig {
     @SerializedName("Source")
-    private String directory;
+    private String source;
 
     @SerializedName("Destination")
     private String destination;
 
-    public String getDirectory() {
-        return directory;
+    public String getSource() {
+        return source;
     }
 
     public String getDestination() {
@@ -46,12 +47,29 @@ public class ArtifactConfig {
 
         ArtifactConfig that = (ArtifactConfig) o;
 
-        return directory != null ? directory.equals(that.directory) : that.directory == null;
+        return source != null ? source.equals(that.source) : that.source == null;
     }
 
     @Override
     public int hashCode() {
-        return directory != null ? directory.hashCode() : 0;
+        return source != null ? source.hashCode() : 0;
+    }
+
+    public ValidationResult validate() {
+        ValidationResult result = new ValidationResult();
+        if (StringUtils.isBlank(source)) {
+            result.addError("Source", "must be provided.");
+        }
+
+        if (StringUtils.isBlank(destination)) {
+            result.addError("Destination", "must be provided.");
+        }
+
+        return result;
+    }
+
+    public static ArtifactConfig from(String json) {
+        return GSON.fromJson(json, ArtifactConfig.class);
     }
 
     public static String artifactConfigMetadata() {

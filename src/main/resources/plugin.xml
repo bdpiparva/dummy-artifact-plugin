@@ -14,8 +14,15 @@
   ~ limitations under the License.
   -->
 
-<div class="form_item_block">
-    <label ng-class="{'is-invalid-label': GOINPUTNAME[Path].$error.server}">Path:<span class='asterix'>*</span></label>
-    <input ng-class="{'is-invalid-input': GOINPUTNAME[Path].$error.server}" type="text" ng-model="Path" ng-required="true" placeholder="value"/>
-    <span class="form_error form-error" ng-class="{'is-visible': GOINPUTNAME[Path].$error.server}" ng-show="GOINPUTNAME[Path].$error.server">{{GOINPUTNAME[Path].$error.server}}</span>
-</div>
+<go-plugin id="${id}" version="1">
+    <about>
+        <name>${name}</name>
+        <version>${version}</version>
+        <target-go-version>${goCdVersion}</target-go-version>
+        <description>${description}</description>
+        <vendor>
+            <name>${vendorName}</name>
+            <url>${vendorUrl}</url>
+        </vendor>
+    </about>
+</go-plugin>

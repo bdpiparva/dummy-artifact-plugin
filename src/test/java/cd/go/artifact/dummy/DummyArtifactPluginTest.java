@@ -93,4 +93,79 @@ class DummyArtifactPluginTest {
         assertThat(response.responseCode()).isEqualTo(200);
         JSONAssert.assertEquals(expectedJson,response.responseBody(),true);
     }
+
+    @Test
+    void shouldReturnPublishArtifactMetadata() throws UnhandledRequestTypeException {
+        final GoPluginApiRequest request = mock(GoPluginApiRequest.class);
+        when(request.requestName()).thenReturn(RequestFromServer.REQUEST_PUBLISH_ARTIFACT_METADATA.getRequestName());
+
+        final GoPluginApiResponse response = new DummyArtifactPlugin().handle(request);
+
+        String expectedMetadata = "[{\"key\":\"Source\",\"metadata\":{\"required\":true,\"secure\":false}},{\"key\":\"Destination\",\"metadata\":{\"required\":true,\"secure\":false}}]";
+        assertThat(response.responseCode()).isEqualTo(200);
+        assertThat(response.responseBody()).isEqualTo(expectedMetadata);
+    }
+
+    @Test
+    void shouldReturnPublishArtifactView() throws UnhandledRequestTypeException {
+        final GoPluginApiRequest request = mock(GoPluginApiRequest.class);
+        when(request.requestName()).thenReturn(RequestFromServer.REQUEST_PUBLISH_ARTIFACT_VIEW.getRequestName());
+
+        final GoPluginApiResponse response = new DummyArtifactPlugin().handle(request);
+
+        final Map<String, String> expectedTemplate = Collections.singletonMap("template", ResourceReader.read("/publish-artifact.template.html"));
+        assertThat(response.responseCode()).isEqualTo(200);
+        assertThat(response.responseBody()).isEqualTo(new Gson().toJson(expectedTemplate));
+    }
+
+    @Test
+    void shouldValidateArtifactConfig() throws UnhandledRequestTypeException, JSONException {
+        final GoPluginApiRequest request = mock(GoPluginApiRequest.class);
+        when(request.requestName()).thenReturn(RequestFromServer.REQUEST_PUBLISH_ARTIFACT_VALIDATE.getRequestName());
+        when(request.requestBody()).thenReturn(GSON.toJson(Collections.singletonMap("Source", "abc")));
+
+        final GoPluginApiResponse response = new DummyArtifactPlugin().handle(request);
+
+        final String expectedJson = "[{\"key\":\"Destination\",\"message\":\"must be provided.\"}]";
+        assertThat(response.responseCode()).isEqualTo(200);
+        JSONAssert.assertEquals(expectedJson,response.responseBody(),true);
+
+    }
+
+    @Test
+    void shouldReturnFetchArtifactMetadata() throws UnhandledRequestTypeException {
+        final GoPluginApiRequest request = mock(GoPluginApiRequest.class);
+        when(request.requestName()).thenReturn(RequestFromServer.REQUEST_FETCH_ARTIFACT_METADATA.getRequestName());
+
+        final GoPluginApiResponse response = new DummyArtifactPlugin().handle(request);
+
+        String expectedMetadata = "[{\"key\":\"Path\",\"metadata\":{\"required\":true,\"secure\":false}}]";
+        assertThat(response.responseCode()).isEqualTo(200);
+        assertThat(response.responseBody()).isEqualTo(expectedMetadata);
+    }
+
+    @Test
+    void shouldReturnFetchArtifactView() throws UnhandledRequestTypeException {
+        final GoPluginApiRequest request = mock(GoPluginApiRequest.class);
+        when(request.requestName()).thenReturn(RequestFromServer.REQUEST_FETCH_ARTIFACT_VIEW.getRequestName());
+
+        final GoPluginApiResponse response = new DummyArtifactPlugin().handle(request);
+
+        final Map<String, String> expectedTemplate = Collections.singletonMap("template", ResourceReader.read("/fetch-artifact.template.html"));
+        assertThat(response.responseCode()).isEqualTo(200);
+        assertThat(response.responseBody()).isEqualTo(new Gson().toJson(expectedTemplate));
+    }
+
+    @Test
+    void shouldValidateFetchArtifactConfig() throws UnhandledRequestTypeException, JSONException {
+        final GoPluginApiRequest request = mock(GoPluginApiRequest.class);
+        when(request.requestName()).thenReturn(RequestFromServer. REQUEST_FETCH_ARTIFACT_VALIDATE.getRequestName());
+        when(request.requestBody()).thenReturn("{}");
+
+        final GoPluginApiResponse response = new DummyArtifactPlugin().handle(request);
+
+        final String expectedJson = "[{\"key\":\"Path\",\"message\":\"must be provided.\"}]";
+        assertThat(response.responseCode()).isEqualTo(200);
+        JSONAssert.assertEquals(expectedJson,response.responseBody(),true);
+    }
 }
