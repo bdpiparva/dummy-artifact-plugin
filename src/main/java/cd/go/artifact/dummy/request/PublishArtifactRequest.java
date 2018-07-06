@@ -16,8 +16,9 @@
 
 package cd.go.artifact.dummy.request;
 
-import cd.go.artifact.dummy.model.ArtifactConfig;
+import cd.go.artifact.dummy.model.ArtifactPlan;
 import cd.go.artifact.dummy.model.ArtifactStore;
+import cd.go.artifact.dummy.model.ArtifactStoreConfig;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -36,19 +37,13 @@ public class PublishArtifactRequest {
 
     @Expose
     @SerializedName("artifact_plan")
-    private ArtifactConfig artifactConfig;
+    private ArtifactPlan artifactPlan;
 
     @Expose
     @SerializedName("environment_variables")
     private Map<String, String> environmentVariables;
 
     public PublishArtifactRequest() {
-    }
-
-    public PublishArtifactRequest(ArtifactStore artifactStore, ArtifactConfig artifactConfig, String agentWorkingDir) {
-        this.agentWorkingDir = agentWorkingDir;
-        this.artifactStore = artifactStore;
-        this.artifactConfig = artifactConfig;
     }
 
     public String getAgentWorkingDir() {
@@ -59,8 +54,8 @@ public class PublishArtifactRequest {
         return artifactStore;
     }
 
-    public ArtifactConfig getArtifactConfig() {
-        return artifactConfig;
+    public ArtifactPlan getArtifactPlan() {
+        return artifactPlan;
     }
 
     public Map<String, String> getEnvironmentVariables() {
@@ -86,14 +81,14 @@ public class PublishArtifactRequest {
             return false;
         if (artifactStore != null ? !artifactStore.equals(that.artifactStore) : that.artifactStore != null)
             return false;
-        return artifactConfig != null ? artifactConfig.equals(that.artifactConfig) : that.artifactConfig == null;
+        return artifactPlan != null ? artifactPlan.equals(that.artifactPlan) : that.artifactPlan == null;
     }
 
     @Override
     public int hashCode() {
         int result = agentWorkingDir != null ? agentWorkingDir.hashCode() : 0;
         result = 31 * result + (artifactStore != null ? artifactStore.hashCode() : 0);
-        result = 31 * result + (artifactConfig != null ? artifactConfig.hashCode() : 0);
+        result = 31 * result + (artifactPlan != null ? artifactPlan.hashCode() : 0);
         return result;
     }
 }

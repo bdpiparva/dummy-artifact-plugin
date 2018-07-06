@@ -17,7 +17,7 @@
 package cd.go.artifact.dummy;
 
 import cd.go.artifact.dummy.model.ArtifactConfig;
-import cd.go.artifact.dummy.model.ArtifactStore;
+import cd.go.artifact.dummy.model.ArtifactStoreConfig;
 import cd.go.artifact.dummy.model.FetchArtifact;
 import cd.go.artifact.dummy.request.FetchArtifactRequest;
 import cd.go.artifact.dummy.request.PublishArtifactRequest;
@@ -34,11 +34,13 @@ import com.thoughtworks.go.plugin.api.response.DefaultGoPluginApiResponse;
 import com.thoughtworks.go.plugin.api.response.GoPluginApiResponse;
 import okhttp3.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Base64;
 
-import static cd.go.artifact.dummy.model.ArtifactStore.artifactStoreMetadata;
+import static cd.go.artifact.dummy.model.ArtifactStoreConfig.artifactStoreMetadata;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 
 @Extension
 public class DummyArtifactPlugin implements GoPlugin {
@@ -65,7 +67,7 @@ public class DummyArtifactPlugin implements GoPlugin {
                 case REQUEST_STORE_CONFIG_VIEW:
                     return DefaultGoPluginApiResponse.success(new View("/artifact-store.template.html").toJSON());
                 case REQUEST_STORE_CONFIG_VALIDATE:
-                    return DefaultGoPluginApiResponse.success(ArtifactStore.from(request.requestBody()).validate().toJSON());
+                    return DefaultGoPluginApiResponse.success(ArtifactStoreConfig.from(request.requestBody()).validate().toJSON());
                 case REQUEST_PUBLISH_ARTIFACT_METADATA:
                     return DefaultGoPluginApiResponse.success(ArtifactConfig.artifactConfigMetadata());
                 case REQUEST_PUBLISH_ARTIFACT_VIEW:
@@ -106,22 +108,22 @@ public class DummyArtifactPlugin implements GoPlugin {
     }
 
     private GoPluginApiResponse publishArtifact(PublishArtifactRequest publishArtifactRequest) throws IOException {
-        ArtifactConfig artifactConfig = publishArtifactRequest.getArtifactConfig();
-        ArtifactStore artifactStore = publishArtifactRequest.getArtifactStore();
+        ArtifactConfig artifactConfig = publishArtifactRequest.getArtifactPlan().getArtifactConfig();
+        ArtifactStoreConfig artifactStoreConfig = publishArtifactRequest.getArtifactStore().getArtifactStoreConfig();
         String pipeline = publishArtifactRequest.getEnvironmentVariables().get("GO_PIPELINE_NAME");
         String pipelineCounter = publishArtifactRequest.getEnvironmentVariables().get("GO_PIPELINE_COUNTER");
         String stage = publishArtifactRequest.getEnvironmentVariables().get("GO_STAGE_NAME");
         String stageCounter = publishArtifactRequest.getEnvironmentVariables().get("GO_STAGE_COUNTER");
         String job = publishArtifactRequest.getEnvironmentVariables().get("GO_JOB_NAME");
 
-        RequestBody body = RequestBody.create(MediaType.parse("application/java-archive"), artifactConfig.getSource());
+        RequestBody body = RequestBody.create(MediaType.parse("application/java-archive"), publishArtifactRequest.getAgentWorkingDir() + File.separator + artifactConfig.getSource());
 
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("file", artifactConfig.getSource(), body)
                 .build();
 
-        HttpUrl httpUrl = HttpUrl.parse(artifactStore.getUrl())
+        HttpUrl httpUrl = HttpUrl.parse(artifactStoreConfig.getUrl())
                 .newBuilder()
                 .addPathSegment("files")
                 .addPathSegment(pipeline)
@@ -130,20 +132,23 @@ public class DummyArtifactPlugin implements GoPlugin {
                 .addPathSegment(stageCounter)
                 .addPathSegment(job)
                 .addPathSegment(artifactConfig.getDestination())
-                .addPathSegment(artifactConfig.getSource())
+                .addPathSegment(new File(artifactConfig.getSource()).getName())
                 .build();
 
 
         Request request = new Request.Builder()
                 .url(httpUrl)
                 .post(requestBody)
+                .addHeader("Authorization", Credentials.basic(artifactStoreConfig.getUsername(), artifactStoreConfig.getPassword()))
+                .addHeader("Confirm", "true")
                 .build();
 
         Response response = CLIENT.newCall(request).execute();
-        if (response.isSuccessful()) {
-            return DefaultGoPluginApiResponse.success("{}");
+        if (!response.isRedirect() && response.isSuccessful()) {
+            return DefaultGoPluginApiResponse.success(GSON.toJson(singletonMap("metadata", singletonMap("filename", artifactConfig.getSource()))));
         }
 
+        LOG.error(String.format("Failed to upload artifact[%s] with status %d. Error: %s", artifactConfig.getSource(), response.code(), response.body().string()));
         return DefaultGoPluginApiResponse.error(response.body().string());
     }
 }

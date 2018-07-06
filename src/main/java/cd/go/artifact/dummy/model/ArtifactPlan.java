@@ -18,16 +18,21 @@ package cd.go.artifact.dummy.model;
 
 import com.google.gson.annotations.SerializedName;
 
-public class ArtifactStore {
+public class ArtifactPlan {
     private String id;
+    private String storeId;
     @SerializedName("configuration")
-    private ArtifactStoreConfig artifactStoreConfig;
+    private ArtifactConfig artifactConfig;
 
     public String getId() {
         return id;
     }
 
-    public ArtifactStoreConfig getArtifactStoreConfig() {
-        return artifactStoreConfig;
+    public String getStoreId() {
+        return storeId;
+    }
+
+    public ArtifactConfig getArtifactConfig() {
+        return artifactConfig;
     }
 }
