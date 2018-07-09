@@ -16,9 +16,7 @@
 
 package cd.go.artifact.dummy;
 
-import cd.go.artifact.dummy.model.ArtifactConfig;
-import cd.go.artifact.dummy.model.ArtifactStoreConfig;
-import cd.go.artifact.dummy.model.FetchArtifact;
+import cd.go.artifact.dummy.model.*;
 import cd.go.artifact.dummy.request.FetchArtifactRequest;
 import cd.go.artifact.dummy.request.PublishArtifactRequest;
 import com.google.gson.Gson;
@@ -39,6 +37,7 @@ import java.io.IOException;
 import java.util.Base64;
 
 import static cd.go.artifact.dummy.model.ArtifactStoreConfig.artifactStoreMetadata;
+import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
@@ -103,52 +102,95 @@ public class DummyArtifactPlugin implements GoPlugin {
         return new GoPluginIdentifier("artifact", singletonList("1.0"));
     }
 
-    private GoPluginApiResponse fetchArtifact(FetchArtifactRequest request) {
-        return null;
-    }
-
-    private GoPluginApiResponse publishArtifact(PublishArtifactRequest publishArtifactRequest) throws IOException {
-        ArtifactConfig artifactConfig = publishArtifactRequest.getArtifactPlan().getArtifactConfig();
-        ArtifactStoreConfig artifactStoreConfig = publishArtifactRequest.getArtifactStore().getArtifactStoreConfig();
-        String pipeline = publishArtifactRequest.getEnvironmentVariables().get("GO_PIPELINE_NAME");
-        String pipelineCounter = publishArtifactRequest.getEnvironmentVariables().get("GO_PIPELINE_COUNTER");
-        String stage = publishArtifactRequest.getEnvironmentVariables().get("GO_STAGE_NAME");
-        String stageCounter = publishArtifactRequest.getEnvironmentVariables().get("GO_STAGE_COUNTER");
-        String job = publishArtifactRequest.getEnvironmentVariables().get("GO_JOB_NAME");
-
-        RequestBody body = RequestBody.create(MediaType.parse("application/java-archive"), publishArtifactRequest.getAgentWorkingDir() + File.separator + artifactConfig.getSource());
-
-        RequestBody requestBody = new MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart("file", artifactConfig.getSource(), body)
-                .build();
+    private GoPluginApiResponse fetchArtifact(FetchArtifactRequest fetchArtifactRequest) throws IOException {
+        ArtifactStoreConfig artifactStoreConfig = fetchArtifactRequest.getArtifactStoreConfig();
+        String artifactPath = fetchArtifactRequest.getFetchArtifact().getPath();
+        PublishMetadata metadata = fetchArtifactRequest.getMetadata();
 
         HttpUrl httpUrl = HttpUrl.parse(artifactStoreConfig.getUrl())
                 .newBuilder()
                 .addPathSegment("files")
-                .addPathSegment(pipeline)
-                .addPathSegment(pipelineCounter)
-                .addPathSegment(stage)
-                .addPathSegment(stageCounter)
-                .addPathSegment(job)
-                .addPathSegment(artifactConfig.getDestination())
-                .addPathSegment(new File(artifactConfig.getSource()).getName())
+                .addPathSegment(metadata.getJobIdentifier().getPipeline())
+                .addPathSegment(metadata.getJobIdentifier().getPipelineCounter())
+                .addPathSegment(metadata.getJobIdentifier().getStage())
+                .addPathSegment(metadata.getJobIdentifier().getStageCounter())
+                .addPathSegment(metadata.getJobIdentifier().getJob())
+                .addPathSegments(artifactPath)
                 .build();
-
 
         Request request = new Request.Builder()
                 .url(httpUrl)
-                .post(requestBody)
+                .get()
                 .addHeader("Authorization", Credentials.basic(artifactStoreConfig.getUsername(), artifactStoreConfig.getPassword()))
                 .addHeader("Confirm", "true")
                 .build();
 
         Response response = CLIENT.newCall(request).execute();
         if (!response.isRedirect() && response.isSuccessful()) {
-            return DefaultGoPluginApiResponse.success(GSON.toJson(singletonMap("metadata", singletonMap("filename", artifactConfig.getSource()))));
+            return DefaultGoPluginApiResponse.success("");
         }
 
-        LOG.error(String.format("Failed to upload artifact[%s] with status %d. Error: %s", artifactConfig.getSource(), response.code(), response.body().string()));
+        LOG.error(format("Failed to fetch artifact[%s] with status %d. Error: %s", artifactPath, response.code(), response.body().string()));
         return DefaultGoPluginApiResponse.error(response.body().string());
+    }
+
+    private GoPluginApiResponse publishArtifact(PublishArtifactRequest publishArtifactRequest) {
+        ArtifactConfig artifactConfig = publishArtifactRequest.getArtifactPlan().getArtifactConfig();
+        ArtifactStoreConfig artifactStoreConfig = publishArtifactRequest.getArtifactStore().getArtifactStoreConfig();
+        JobIdentifier jobIdentifier = publishArtifactRequest.getJobIdentifier();
+
+        try {
+            File artifact = new File(publishArtifactRequest.getAgentWorkingDir() + File.separator + artifactConfig.getSource());
+
+            if (!artifact.exists()) {
+                return DefaultGoPluginApiResponse.error(format("Artifact `%s` does not exist at location `%s`.", artifact.getName(), artifact.getParentFile().getAbsolutePath()));
+            }
+
+            if (!artifact.canRead()) {
+                return DefaultGoPluginApiResponse.error(format("Does not have permission to read artifact `%s`", artifact.getName()));
+            }
+
+            if (artifact.isDirectory()) {
+                return DefaultGoPluginApiResponse.error(format("Artifact `%s` is a directory.", artifact.getName()));
+            }
+
+            RequestBody body = RequestBody.create(MediaType.parse("application/java-archive"), artifact);
+
+            RequestBody requestBody = new MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("file", artifactConfig.getSource(), body)
+                    .build();
+
+            HttpUrl httpUrl = HttpUrl.parse(artifactStoreConfig.getUrl())
+                    .newBuilder()
+                    .addPathSegment("files")
+                    .addPathSegment(jobIdentifier.getPipeline())
+                    .addPathSegment(jobIdentifier.getPipelineCounter())
+                    .addPathSegment(jobIdentifier.getStage())
+                    .addPathSegment(jobIdentifier.getStageCounter())
+                    .addPathSegment(jobIdentifier.getJob())
+                    .addPathSegment(artifactConfig.getDestination())
+                    .addPathSegment(new File(artifactConfig.getSource()).getName())
+                    .build();
+
+
+            Request request = new Request.Builder()
+                    .url(httpUrl)
+                    .post(requestBody)
+                    .addHeader("Authorization", Credentials.basic(artifactStoreConfig.getUsername(), artifactStoreConfig.getPassword()))
+                    .addHeader("Confirm", "true")
+                    .build();
+
+            Response response = CLIENT.newCall(request).execute();
+            if (!response.isRedirect() && response.isSuccessful()) {
+                return DefaultGoPluginApiResponse.success(GSON.toJson(singletonMap("metadata", new PublishMetadata(artifactConfig.getSource(), jobIdentifier))));
+            }
+
+            LOG.error(format("Failed to upload artifact[%s] with status %d. Error: %s", artifactConfig.getSource(), response.code(), response.body().string()));
+            return DefaultGoPluginApiResponse.error(response.body().string());
+        } catch (Exception e) {
+            LOG.error(format("Failed to upload artifact[%s] Error: %s", artifactConfig.getSource(), e.getMessage()));
+            return DefaultGoPluginApiResponse.error(e.getMessage());
+        }
     }
 }

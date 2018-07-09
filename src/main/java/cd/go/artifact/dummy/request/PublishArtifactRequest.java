@@ -19,6 +19,7 @@ package cd.go.artifact.dummy.request;
 import cd.go.artifact.dummy.model.ArtifactPlan;
 import cd.go.artifact.dummy.model.ArtifactStore;
 import cd.go.artifact.dummy.model.ArtifactStoreConfig;
+import cd.go.artifact.dummy.model.JobIdentifier;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -42,6 +43,7 @@ public class PublishArtifactRequest {
     @Expose
     @SerializedName("environment_variables")
     private Map<String, String> environmentVariables;
+    private Object jobIdentifier;
 
     public PublishArtifactRequest() {
     }
@@ -90,5 +92,9 @@ public class PublishArtifactRequest {
         result = 31 * result + (artifactStore != null ? artifactStore.hashCode() : 0);
         result = 31 * result + (artifactPlan != null ? artifactPlan.hashCode() : 0);
         return result;
+    }
+
+    public JobIdentifier getJobIdentifier() {
+        return new JobIdentifier(getEnvironmentVariables());
     }
 }

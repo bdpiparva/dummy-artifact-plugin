@@ -17,10 +17,10 @@
 package cd.go.artifact.dummy.request;
 
 import cd.go.artifact.dummy.model.ArtifactStoreConfig;
+import cd.go.artifact.dummy.model.FetchArtifact;
+import cd.go.artifact.dummy.model.PublishMetadata;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-
-import java.util.Map;
 
 import static cd.go.artifact.dummy.DummyArtifactPlugin.GSON;
 
@@ -29,26 +29,25 @@ public class FetchArtifactRequest {
     @SerializedName("store_configuration")
     private ArtifactStoreConfig artifactStoreConfig;
     @Expose
+    @SerializedName("fetch_artifact_configuration")
+    private FetchArtifact fetchArtifact;
+    @Expose
     @SerializedName("artifact_metadata")
-    private Map<String, String> metadata;
-
-    public FetchArtifactRequest() {
-    }
-
-    public FetchArtifactRequest(ArtifactStoreConfig artifactStoreConfig, Map<String, String> metadata) {
-        this.artifactStoreConfig = artifactStoreConfig;
-        this.metadata = metadata;
-    }
+    private PublishMetadata metadata;
 
     public ArtifactStoreConfig getArtifactStoreConfig() {
         return artifactStoreConfig;
     }
 
-    public Map<String, String> getMetadata() {
+    public PublishMetadata getMetadata() {
         return metadata;
     }
 
     public static FetchArtifactRequest fromJSON(String json) {
         return GSON.fromJson(json, FetchArtifactRequest.class);
+    }
+
+    public FetchArtifact getFetchArtifact() {
+        return fetchArtifact;
     }
 }

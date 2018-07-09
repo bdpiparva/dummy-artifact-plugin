@@ -29,6 +29,10 @@ public class FetchArtifact {
     @SerializedName("Path")
     private String path;
 
+    public String getPath() {
+        return path;
+    }
+
     public static String metadata() {
         return GSON.toJson(Arrays.asList(
                 new Field("Path",new Metadata(true,false))
