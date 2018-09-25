@@ -42,7 +42,8 @@ dependencies {
     compile group: 'org.apache.commons', name: 'commons-lang3', version: project.versions.commonsLang3
     compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.10.0'
 
-    testCompileOnly group: 'cd.go.plugin', name: 'go-plugin-api', version: '18.6.0'
+    testImplementation group: 'cd.go.plugin', name: 'go-plugin-api', version: '18.6.0'
+
     testCompile group: 'org.skyscreamer', name: 'jsonassert', version: project.versions.jsonAssert
     testCompile group: 'org.mockito', name: 'mockito-core', version: project.versions.mockitoCore
     testCompile group: 'org.assertj', name: 'assertj-core', version: project.versions.assertJ
@@ -60,6 +61,10 @@ jar {
     from(sourceSets.main.java) {
         into "/"
     }
+}
+
+test {
+    useJUnitPlatform()
 }
 
 project.ext.pluginDesc = [
